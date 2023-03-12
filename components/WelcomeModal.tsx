@@ -4,19 +4,23 @@ import {
 	ChatBubbleLeftIcon,
 	EnvelopeIcon,
 	MegaphoneIcon,
-	NewspaperIcon
+	NewspaperIcon,
+	PuzzlePieceIcon
 } from '@heroicons/react/24/outline'
 import { getNameFromId } from '../utils/utils'
 import { FingerPrintIcon } from '@heroicons/react/24/outline'
 import { useSession } from 'next-auth/react'
+import { Prism } from '@mantine/prism'
+import { parseCookies } from 'nookies'
 
 const features = [
 	{
 		name: 'Create a post',
 		description:
-			'To create a new post to buy or sell Bitcoin, just click on the map where you would like to meet.',
+			'To create a new post to buy or sell Bitcoin, just click on the map where you would like to meet. Be specific, zoom into a street corner or park.',
 		icon: MegaphoneIcon
 	},
+
 	{
 		name: 'Respond to a post',
 		description:
@@ -53,7 +57,14 @@ export function WelcomeModal({
 	handleAddEmail: () => void
 }) {
 	const session = useSession()
+	const cookies = parseCookies()
+	console.log('cookies', cookies)
 	const user = session?.data?.user?.userId
+
+	let privateKey = ''
+	if (typeof window !== 'undefined') {
+		privateKey = localStorage.getItem('pgpPrivateKey')
+	}
 
 	return (
 		<Transition.Root show={open} as={Fragment}>
@@ -113,6 +124,28 @@ export function WelcomeModal({
 															</dd>
 														</div>
 													))}
+													<div
+														key={'encrryptedmessage'}
+														className='relative pl-16'>
+														<dt className='text-base font-semibold leading-7 text-gray-900'>
+															<div className='absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600'>
+																<PuzzlePieceIcon
+																	className='h-6 w-6 text-white'
+																	aria-hidden='true'
+																/>
+															</div>
+															Encrypted Messages
+														</dt>
+														<dd className='mt-2 text-base leading-7 text-gray-600'>
+															Messages are encrytped using PGP so that only you
+															can read them. Here is your private key (copy and
+															save it somewhere safe if you want to read your
+															messages from another device):
+															<br />
+															<Prism language='tsx'>{privateKey}</Prism>
+															<br />
+														</dd>
+													</div>
 												</dl>
 											</div>
 										</div>

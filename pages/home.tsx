@@ -12,6 +12,8 @@ import { authOptions } from './api/auth/[...nextauth]'
 import { getPosts } from './api/get_posts'
 import { GroupedMessage, PostType } from '@/types/types'
 import { getMessages } from './api/get_messages'
+import { parseCookies, setCookie, destroyCookie } from 'nookies'
+import nookies from 'nookies'
 
 interface IProps {
 	user: string
@@ -33,6 +35,11 @@ export default function Home({ user, posts, messages }: IProps) {
 			if (!userFromDb.data) {
 				const newUser = await Axios.post('/api/create_user', {
 					userId: user
+				})
+				//localStorage.setItem('pgpPrivateKey', newUser.data.pgpPrivateKey)
+				setCookie(null, 'pgpPrivateKey', newUser.data.pgpPrivateKey, {
+					maxAge: 2147483647, //expires in 2038
+					path: '/'
 				})
 				setShowWelcomeModal(true)
 			}
@@ -131,6 +138,8 @@ Home.getLayout = function getLayout(page) {
 
 export const getServerSideProps = async function ({ req, res }) {
 	const session = await getServerSession(req, res, authOptions)
+	const cookies = nookies.get({ req })
+	console.log('cookies ss', cookies)
 	const user = session?.user?.userId
 	if (!user) {
 		return {
@@ -142,7 +151,7 @@ export const getServerSideProps = async function ({ req, res }) {
 	}
 
 	const posts = await getPosts()
-	const messages = await getMessages(user)
+	const messages = await getMessages(user, cookies.pgpPrivateKey)
 
 	return {
 		props: {

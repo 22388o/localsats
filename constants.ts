@@ -1,4 +1,4 @@
-export const CHAT_PAYWALL_SATOSHIS = 100
+export const CHAT_PAYWALL_SATOSHIS = 20
 
 export const rqKeys = {
 	messagesKey: () => ['messagesKey'] as const,

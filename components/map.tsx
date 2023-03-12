@@ -20,6 +20,7 @@ import {
 import { NewPostSuccessModal } from './newPostSuccessModal'
 import { rqKeys } from '../constants'
 import { usePosts } from '../hooks/usePosts'
+const openpgp = require('openpgp')
 
 const containerStyle = {
 	width: '100%',
@@ -97,10 +98,26 @@ export default function SimpleMap({
 		setShowQr(false)
 		setPendingInvoice(null)
 
+		const pubKey = openPost?.author[0].pgpPublicKey
+		const publicKey = await openpgp.readKey({ armoredKey: pubKey })
+		//const publickKey = await openpgp.key.readArmored(pubKey)
+		//console.log('publicKey', publicKey)
+		//	console.log('pubKey', pubKey)
+		//var publicKey = openpgp.key.readArmored(pubKey)
+		const encryptedMessage = await openpgp.encrypt({
+			message: await openpgp.createMessage({
+				text: 'Hi! I would like to chat with you.'
+			}), //  openpgp.message.fromText('Hi! I would like to chat with you.'),
+			//	encryptionKeys: publicKey
+			encryptionKeys: publicKey
+		})
+
+		//	console.log('encryptedMessage', encryptedMessage)
+
 		// insert new initial message here
 		const newMessage: Omit<MessageType, '_id'> = {
 			chatPaywallId: newPaywallId.data,
-			body: 'Hi! I would like to chat with you about your post.',
+			body: encryptedMessage,
 			postId: openPost?._id,
 			fromUserId: user,
 			toUserId: openPost?.userId,
