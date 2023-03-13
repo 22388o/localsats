@@ -107,7 +107,9 @@ export default function SimpleMap({
 			armoredKey: myPublicKeyArmored
 		})
 		const encrypted = await openpgp.encrypt({
-			message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
+			message: await openpgp.createMessage({
+				text: 'Hello, I am interested in your post.'
+			}), // input as Message object
 			encryptionKeys: [publicKey, myPublicKey]
 		})
 
