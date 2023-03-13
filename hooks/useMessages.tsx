@@ -20,7 +20,7 @@ export const useMessages = ({
 			return axios
 				.post<MessageType[]>('/api/get_messages', {
 					userId,
-					pgpPrivateKey: cookies.pgpPrivateKey
+					privateKeyPassphrase: cookies.privateKeyPassphrase
 				})
 				.then((data) => data.data)
 		},

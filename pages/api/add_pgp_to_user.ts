@@ -3,6 +3,7 @@ import clientPromise from '../../lib/mongodb'
 import { authOptions } from './auth/[...nextauth]'
 const openpgp = require('openpgp')
 import nookies from 'nookies'
+var crypto = require('crypto')
 
 export default async function handler(req, res) {
 	try {
@@ -17,16 +18,18 @@ export default async function handler(req, res) {
 			return
 		}
 
+		const privateKeyPassphrase = crypto.randomBytes(20).toString('hex')
+
 		const { privateKey, publicKey, revocationCertificate } =
 			await openpgp.generateKey({
 				type: 'ecc', // Type of the key, defaults to ECC
 				curve: 'curve25519', // ECC curve name, defaults to curve25519
 				userIDs: [{ name: 'Jon Smith', email: 'jon@example.com' }], // you can pass multiple user IDs
-				passphrase: 'test', // protects the private key
+				passphrase: privateKeyPassphrase, // protects the private key
 				format: 'armored' // output key format, defaults to 'armored' (other options: 'binary' or 'object')
 			})
 
-		nookies.set({ req, res }, 'pgpPrivateKey', privateKey, {
+		nookies.set({ req, res }, 'privateKeyPassphrase', privateKeyPassphrase, {
 			maxAge: 2147483647,
 			path: '/'
 		})
@@ -37,7 +40,9 @@ export default async function handler(req, res) {
 			{ userId: req.body.userId },
 			{
 				$set: {
-					pgpPublicKey: publicKey
+					pgpPublicKey: publicKey,
+					pgpPrivateKeyEncrypted: privateKey,
+					pgpRevocationCertificate: revocationCertificate
 				}
 			}
 		)

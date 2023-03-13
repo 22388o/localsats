@@ -21,7 +21,7 @@ import { NewPostSuccessModal } from './newPostSuccessModal'
 import { rqKeys } from '../constants'
 import { usePosts } from '../hooks/usePosts'
 import { useDatabaseUser } from '@/hooks/useDatabaseUser'
-const openpgp = require('openpgp')
+import { encryptMessage } from '../lib/pgp'
 
 const containerStyle = {
 	width: '100%',
@@ -102,21 +102,17 @@ export default function SimpleMap({
 
 		const publicKeyArmored = openPost?.author[0].pgpPublicKey
 		const myPublicKeyArmored = userFromDatabase?.data?.data?.pgpPublicKey
-		const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored })
-		const myPublicKey = await openpgp.readKey({
-			armoredKey: myPublicKeyArmored
-		})
-		const encrypted = await openpgp.encrypt({
-			message: await openpgp.createMessage({
-				text: 'Hello, I am interested in your post.'
-			}), // input as Message object
-			encryptionKeys: [publicKey, myPublicKey]
+
+		const encryptedMessage = await encryptMessage({
+			publicKey1: publicKeyArmored,
+			publicKey2: myPublicKeyArmored,
+			message: 'Hello, I am interested in your post.'
 		})
 
 		// insert new initial message here
 		const newMessage: Omit<MessageType, '_id'> = {
 			chatPaywallId: newPaywallId.data,
-			body: encrypted,
+			body: encryptedMessage,
 			postId: openPost?._id,
 			fromUserId: user,
 			toUserId: openPost?.userId,
@@ -297,19 +293,14 @@ export default function SimpleMap({
 
 					const publicKeyArmored = toUserPgpPublicKey
 					const myPublicKeyArmored = userFromDatabase?.data?.data?.pgpPublicKey
-					const publicKey = await openpgp.readKey({
-						armoredKey: publicKeyArmored
-					})
-					const myPublicKey = await openpgp.readKey({
-						armoredKey: myPublicKeyArmored
-					})
-					const encrypted = await openpgp.encrypt({
-						message: await openpgp.createMessage({ text: body }), // input as Message object
-						encryptionKeys: [publicKey, myPublicKey]
+					const encryptedMessage = await encryptMessage({
+						publicKey1: publicKeyArmored,
+						publicKey2: myPublicKeyArmored,
+						message: body
 					})
 
 					const message: Omit<MessageType, '_id'> = {
-						body: encrypted,
+						body: encryptedMessage,
 						fromUserId: user,
 						toUserId,
 						postId: openMessages[0].postId,
