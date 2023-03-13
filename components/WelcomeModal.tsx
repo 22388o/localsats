@@ -58,13 +58,7 @@ export function WelcomeModal({
 }) {
 	const session = useSession()
 	const cookies = parseCookies()
-	console.log('cookies', cookies)
 	const user = session?.data?.user?.userId
-
-	let privateKey = ''
-	if (typeof window !== 'undefined') {
-		privateKey = localStorage.getItem('pgpPrivateKey')
-	}
 
 	return (
 		<Transition.Root show={open} as={Fragment}>
@@ -142,7 +136,7 @@ export function WelcomeModal({
 															save it somewhere safe if you want to read your
 															messages from another device):
 															<br />
-															<Prism language='tsx'>{privateKey}</Prism>
+															{/* <Prism language='tsx'>{privateKey}</Prism> */}
 															<br />
 														</dd>
 													</div>

@@ -20,6 +20,7 @@ import {
 import { NewPostSuccessModal } from './newPostSuccessModal'
 import { rqKeys } from '../constants'
 import { usePosts } from '../hooks/usePosts'
+import { useDatabaseUser } from '@/hooks/useDatabaseUser'
 const openpgp = require('openpgp')
 
 const containerStyle = {
@@ -36,6 +37,7 @@ export default function SimpleMap({
 	posts: PostType[]
 	messages: MessageType[]
 }) {
+	const userFromDatabase = useDatabaseUser({ userId: user })
 	const { isLoaded } = useJsApiLoader({
 		id: 'google-map-script',
 		googleMapsApiKey: 'AIzaSyBzbCrAFKFxe5ytG-z2kCZf1MNiYzccjto'
@@ -98,26 +100,21 @@ export default function SimpleMap({
 		setShowQr(false)
 		setPendingInvoice(null)
 
-		const pubKey = openPost?.author[0].pgpPublicKey
-		const publicKey = await openpgp.readKey({ armoredKey: pubKey })
-		//const publickKey = await openpgp.key.readArmored(pubKey)
-		//console.log('publicKey', publicKey)
-		//	console.log('pubKey', pubKey)
-		//var publicKey = openpgp.key.readArmored(pubKey)
-		const encryptedMessage = await openpgp.encrypt({
-			message: await openpgp.createMessage({
-				text: 'Hi! I would like to chat with you.'
-			}), //  openpgp.message.fromText('Hi! I would like to chat with you.'),
-			//	encryptionKeys: publicKey
-			encryptionKeys: publicKey
+		const publicKeyArmored = openPost?.author[0].pgpPublicKey
+		const myPublicKeyArmored = userFromDatabase?.data?.data?.pgpPublicKey
+		const publicKey = await openpgp.readKey({ armoredKey: publicKeyArmored })
+		const myPublicKey = await openpgp.readKey({
+			armoredKey: myPublicKeyArmored
 		})
-
-		//	console.log('encryptedMessage', encryptedMessage)
+		const encrypted = await openpgp.encrypt({
+			message: await openpgp.createMessage({ text: 'Hello, World!' }), // input as Message object
+			encryptionKeys: [publicKey, myPublicKey]
+		})
 
 		// insert new initial message here
 		const newMessage: Omit<MessageType, '_id'> = {
 			chatPaywallId: newPaywallId.data,
-			body: encryptedMessage,
+			body: encrypted,
 			postId: openPost?._id,
 			fromUserId: user,
 			toUserId: openPost?.userId,
@@ -282,15 +279,37 @@ export default function SimpleMap({
 				open={!!openChatPaywallId}
 				setOpen={setOpenChatPaywallId}
 				messages={openMessages}
-				createMessageMutation={(body: string) => {
+				createMessageMutation={async (body: string) => {
 					if (!openChatPaywallId || !body) return
+
+					const toUserId =
+						openMessages[0].fromUserId === user
+							? openMessages[0].toUserId
+							: openMessages[0].fromUserId
+
+					const toUser = await axios.post('/api/get_user', {
+						userId: toUserId
+					})
+
+					const toUserPgpPublicKey = toUser.data.pgpPublicKey
+
+					const publicKeyArmored = toUserPgpPublicKey
+					const myPublicKeyArmored = userFromDatabase?.data?.data?.pgpPublicKey
+					const publicKey = await openpgp.readKey({
+						armoredKey: publicKeyArmored
+					})
+					const myPublicKey = await openpgp.readKey({
+						armoredKey: myPublicKeyArmored
+					})
+					const encrypted = await openpgp.encrypt({
+						message: await openpgp.createMessage({ text: body }), // input as Message object
+						encryptionKeys: [publicKey, myPublicKey]
+					})
+
 					const message: Omit<MessageType, '_id'> = {
-						body,
+						body: encrypted,
 						fromUserId: user,
-						toUserId:
-							openMessages[0].fromUserId === user
-								? openMessages[0].toUserId
-								: openMessages[0].fromUserId,
+						toUserId,
 						postId: openMessages[0].postId,
 						seen: false,
 						sentDate: new Date(),

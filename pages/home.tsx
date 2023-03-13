@@ -14,6 +14,7 @@ import { GroupedMessage, PostType } from '@/types/types'
 import { getMessages } from './api/get_messages'
 import { parseCookies, setCookie, destroyCookie } from 'nookies'
 import nookies from 'nookies'
+import { Prism } from '@mantine/prism'
 
 interface IProps {
 	user: string
@@ -24,7 +25,7 @@ interface IProps {
 export default function Home({ user, posts, messages }: IProps) {
 	const [email, setEmail] = React.useState('')
 	const [showEmailSuccess, setShowEmailSuccess] = React.useState(false)
-
+	const cookies = parseCookies()
 	const [showWelcomeModal, setShowWelcomeModal] = React.useState(false)
 	React.useEffect(() => {
 		if (!user) return
@@ -32,15 +33,11 @@ export default function Home({ user, posts, messages }: IProps) {
 			const userFromDb = await Axios.post('/api/get_user', {
 				userId: user
 			})
-			if (!userFromDb.data) {
-				const newUser = await Axios.post('/api/create_user', {
+			if (userFromDb && !userFromDb.data.pgpPublicKey) {
+				await Axios.post('/api/add_pgp_to_user', {
 					userId: user
 				})
-				//localStorage.setItem('pgpPrivateKey', newUser.data.pgpPrivateKey)
-				setCookie(null, 'pgpPrivateKey', newUser.data.pgpPrivateKey, {
-					maxAge: 2147483647, //expires in 2038
-					path: '/'
-				})
+
 				setShowWelcomeModal(true)
 			}
 		}
@@ -75,6 +72,10 @@ export default function Home({ user, posts, messages }: IProps) {
 				To create a new post to buy or sell bitcoin, just click anywhere on the
 				map. To see other peoples posts, click on the icons on the map.
 			</p>
+
+			{/* <Prism language='tsx'>{userFromDatabase?.data?.data?.pgpPublicKey}</Prism>
+
+			<Prism language='tsx'>{cookies?.pgpPrivateKey}</Prism> */}
 
 			<div className='bg-white shadow sm:rounded-lg'>
 				<div className='px-4 py-5 sm:p-6'>
@@ -139,7 +140,6 @@ Home.getLayout = function getLayout(page) {
 export const getServerSideProps = async function ({ req, res }) {
 	const session = await getServerSession(req, res, authOptions)
 	const cookies = nookies.get({ req })
-	console.log('cookies ss', cookies)
 	const user = session?.user?.userId
 	if (!user) {
 		return {

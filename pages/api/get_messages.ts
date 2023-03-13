@@ -14,42 +14,32 @@ export const getMessages = async (userId: string, pgpPrivateKey: string) => {
 		})
 		.sort({ sentDate: 1 })
 		.toArray()
-	//	console.log(pgpPrivateKey)
 
-	// const privateKey = await openpgp.decryptKey({
-	// 	privateKey: await openpgp.readPrivateKey({ armoredKey: pgpPrivateKey })
-	// 	//	passphrase
-	// })
+	const privateKey = await openpgp.decryptKey({
+		privateKey: await openpgp.readPrivateKey({ armoredKey: pgpPrivateKey }),
+		passphrase: 'test'
+	})
 
-	messages.map(async (m) => {
+	const finalMessages = []
+	for await (const m of messages) {
 		const message = await openpgp.readMessage({
 			armoredMessage: m.body // parse armored message
 		})
 
 		const { data: decrypted, signatures } = await openpgp.decrypt({
 			message,
-			config: {
-				allowInsecureDecryptionWithSigningKeys: true
-			},
-			//	verificationKeys: publicKey, // optional
-			decryptionKeys: await openpgp.readPrivateKey({
-				armoredKey: pgpPrivateKey
-			})
+			decryptionKeys: privateKey
 		})
-
 		m.body = decrypted
-		//		console.log(message)
-		//		console.log(message.message)
-		//		console.log(message.message)
-		return m
-	})
-	return messages
+		finalMessages.push(m)
+	}
+
+	return finalMessages
 }
 
 export default async function handler(req, res) {
 	try {
 		const messages = await getMessages(req.body.userId, req.body.pgpPrivateKey)
-		//		console.log('messages', messages)
 		res.json(messages)
 	} catch (e) {
 		console.error(e)
