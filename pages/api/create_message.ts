@@ -80,7 +80,7 @@ export default async function handler(req, res) {
 			)
 
 			try {
-				sesClient.send(sendEmailCommand)
+				await sesClient.send(sendEmailCommand)
 			} catch (err) {
 				console.log('Error', err)
 			}

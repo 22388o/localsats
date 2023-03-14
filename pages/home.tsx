@@ -12,9 +12,11 @@ import { authOptions } from './api/auth/[...nextauth]'
 import { getPosts } from './api/get_posts'
 import { GroupedMessage, PostType } from '@/types/types'
 import { getMessages } from './api/get_messages'
-import { parseCookies } from 'nookies'
+import { parseCookies, setCookie } from 'nookies'
 import nookies from 'nookies'
 import { Prism } from '@mantine/prism'
+import { useQueryClient } from '@tanstack/react-query'
+import { Router, useRouter } from 'next/router'
 
 interface IProps {
 	user: string
@@ -23,7 +25,9 @@ interface IProps {
 }
 
 export default function Home({ user, posts, messages }: IProps) {
+	const router = useRouter()
 	const [email, setEmail] = React.useState('')
+	const [passphrase, setPassphrase] = React.useState('')
 	const [showEmailSuccess, setShowEmailSuccess] = React.useState(false)
 	const cookies = parseCookies()
 	const [showWelcomeModal, setShowWelcomeModal] = React.useState(false)
@@ -104,7 +108,11 @@ export default function Home({ user, posts, messages }: IProps) {
 							/>
 						</div>
 						<button
-							disabled={!EmailValidator.validate(email) && email !== ''}
+							disabled={
+								(!EmailValidator.validate(email) && email !== '') ||
+								email === '' ||
+								userEmail === email
+							}
 							onClick={saveEmail}
 							className='disabled:opacity-50 disabled:cursor-not-allowed mt-3 inline-flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm'>
 							Save
@@ -130,24 +138,29 @@ export default function Home({ user, posts, messages }: IProps) {
 							</label>
 							<input
 								type='text'
-								name='privateKey'
-								id='privateKey'
+								name='privateKeyPassphrase'
+								id='privateKeyPassphrase'
 								onChange={(e) => {
-									//	setEmail(e.target.value)
+									setPassphrase(e.target.value)
 								}}
 								className='block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm'
-								placeholder='you@example.com (optional)'
+								placeholder='your PGP passphrase...'
 								defaultValue={cookies.privateKeyPassphrase}
 							/>
 						</div>
 						<button
-							disabled={!EmailValidator.validate(email) && email !== ''}
-							onClick={saveEmail}
+							disabled={passphrase.length < 1}
+							onClick={async () => {
+								setCookie(null, 'privateKeyPassphrase', passphrase, {
+									maxAge: 2147483647,
+									path: '/'
+								})
+								router.reload()
+							}}
 							className='disabled:opacity-50 disabled:cursor-not-allowed mt-3 inline-flex w-full items-center justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm'>
 							Save
 						</button>
 					</div>
-
 					{/* {userFromDatabase?.data?.data?.pgpPublicKey && (
 						<Prism  language='tsx'>
 							{userFromDatabase?.data?.data?.pgpPublicKey}

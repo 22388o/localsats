@@ -44,6 +44,7 @@ export const getMessages = async (
 
 		return finalMessages
 	} catch (err) {
+		console.log('err', err)
 		return messages
 	}
 }

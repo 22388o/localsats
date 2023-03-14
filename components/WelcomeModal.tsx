@@ -118,28 +118,6 @@ export function WelcomeModal({
 															</dd>
 														</div>
 													))}
-													<div
-														key={'encrryptedmessage'}
-														className='relative pl-16'>
-														<dt className='text-base font-semibold leading-7 text-gray-900'>
-															<div className='absolute top-0 left-0 flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-600'>
-																<PuzzlePieceIcon
-																	className='h-6 w-6 text-white'
-																	aria-hidden='true'
-																/>
-															</div>
-															Encrypted Messages
-														</dt>
-														<dd className='mt-2 text-base leading-7 text-gray-600'>
-															Messages are encrytped using PGP so that only you
-															can read them. Here is your private key (copy and
-															save it somewhere safe if you want to read your
-															messages from another device):
-															<br />
-															{/* <Prism language='tsx'>{privateKey}</Prism> */}
-															<br />
-														</dd>
-													</div>
 												</dl>
 											</div>
 										</div>

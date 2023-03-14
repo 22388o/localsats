@@ -285,10 +285,13 @@ export default function SimpleMap({
 							? openMessages[0].toUserId
 							: openMessages[0].fromUserId
 
+					console.log('toUserId', toUserId)
+
 					const toUser = await axios.post('/api/get_user', {
 						userId: toUserId
 					})
 
+					console.log(toUser.data)
 					const toUserPgpPublicKey = toUser.data.pgpPublicKey
 
 					const publicKeyArmored = toUserPgpPublicKey
